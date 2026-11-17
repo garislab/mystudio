@@ -1,0 +1,2060 @@
+/* ==========================================================================
+   PT GARIS CERITA KARYA (GCK) — V6: 2D SKETCH PARALLAX & MINIMALIST TABS
+   Design System: Fullscreen 2D Sketch Parallax + Borderless Minimalist Sketch UI
+   ========================================================================== */
+
+:root {
+  --bg-paper: #f4ede1;
+  --bg-paper-elevated: #fbf8f2;
+  --bg-paper-warm: #efe6d5;
+  --ink-primary: #1e1b18;
+  --ink-secondary: #4e453c;
+  --ink-muted: #807365;
+  --accent-orange: #e07a2e;
+  --accent-orange-deep: #c85e16;
+  --accent-orange-soft: #fce8d8;
+  --accent-blue: #2b5b84;
+  --border-ink: #26211d;
+  --line-sketch: rgba(38, 33, 29, 0.18);
+  --line-sketch-strong: rgba(38, 33, 29, 0.34);
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-hand: "Caveat", cursive;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-paper);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Subtle Architectural Sketch Paper Grain Overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 90;
+  background-image: radial-gradient(rgba(38, 33, 29, 0.035) 1px, transparent 0);
+  background-size: 18px 18px;
+}
+
+/* --------------------------------------------------------------------------
+   1. LOADING SCREEN (MINIMALIST SKETCH PAPER INITIALIZATION)
+   -------------------------------------------------------------------------- */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--bg-paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-card {
+  background: transparent;
+  padding: 28px 38px;
+  text-align: center;
+  max-width: 420px;
+  width: 90%;
+}
+
+.loading-logo-svg {
+  width: 68px;
+  height: 54px;
+  margin-bottom: 12px;
+}
+
+.loading-logo-svg path {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: drawInk 1.6s ease forwards infinite alternate;
+}
+
+@keyframes drawInk {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.loading-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loading-subtitle {
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  color: var(--ink-secondary);
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+.loading-bar-track {
+  width: 180px;
+  margin: 0 auto;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(38, 33, 29, 0.14);
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent-orange);
+  transform-origin: left;
+  animation: loadProgress 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes loadProgress {
+  from {
+    transform: scaleX(0.08);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. FULLSCREEN 2D SKETCH PARALLAX STAGE (NO MENU BAR, NO MINI-MAP)
+   -------------------------------------------------------------------------- */
+.sketch-app-shell {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, #fbf8f1 0%, #ede3d2 100%);
+  overflow: hidden;
+}
+
+.sketch-parallax-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1500px;
+  overflow: hidden;
+}
+
+/* Fullscreen 2D Sketch Stage on Desktop/Landscape — 100% Full Browser Viewport */
+.sketch-scene-frame {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: #f5efe4;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.sketch-zoom-rig {
+  position: absolute;
+  inset: -2.4%;
+  width: 104.8%;
+  height: 104.8%;
+  transform-origin: 50% 50%;
+  transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* Multi-Plane 2D Parallax Layers */
+.parallax-plane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.plane-bg {
+  z-index: 1;
+  box-shadow: 0 0 0 32px #f4ede1;
+}
+
+.sketch-raw-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  filter: contrast(1.02) saturate(1.03);
+}
+
+/* Layer 2: Warm Architectural Window Sunlight Rays */
+.plane-sunlight {
+  z-index: 2;
+  mix-blend-mode: soft-light;
+}
+
+.sunlight-rays {
+  position: absolute;
+  inset: -10%;
+  background:
+    linear-gradient(
+      118deg,
+      rgba(255, 244, 214, 0.52) 0%,
+      rgba(255, 236, 196, 0.28) 26%,
+      rgba(255, 255, 255, 0) 58%
+    ),
+    radial-gradient(circle at 32% 40%, rgba(255, 232, 185, 0.25), transparent 60%);
+}
+
+/* Layer 3: Interactive Studio Object Hitboxes */
+.plane-objects {
+  z-index: 4;
+  pointer-events: none;
+}
+
+.sketch-object-hitbox {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 8px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), filter 0.28s ease;
+}
+
+.object-sketch-border {
+  position: absolute;
+  inset: -4px;
+  border-radius: 9px;
+  border: 2px solid rgba(224, 122, 46, 0.38);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 252, 245, 0.68),
+    0 0 0 2px rgba(255, 252, 245, 0.62),
+    0 6px 18px rgba(224, 122, 46, 0.12);
+  background: rgba(224, 122, 46, 0.02);
+  transition: all 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.sketch-object-hitbox:hover,
+.sketch-object-hitbox:focus-visible,
+.sketch-object-hitbox.is-hovered {
+  transform: translate3d(0, -4px, 0) scale(1.028);
+  z-index: 8;
+}
+
+.sketch-object-hitbox:hover .object-sketch-border,
+.sketch-object-hitbox:focus-visible .object-sketch-border,
+.sketch-object-hitbox.is-hovered .object-sketch-border {
+  inset: -6px;
+  border-width: 2.5px;
+  border-color: var(--accent-orange);
+  background: rgba(224, 122, 46, 0.08);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 253, 248, 0.95),
+    0 0 0 3px rgba(255, 253, 248, 0.92),
+    0 12px 30px rgba(224, 122, 46, 0.3);
+}
+
+.monitor-live-glow {
+  position: absolute;
+  left: 4%;
+  top: 6%;
+  width: 92%;
+  height: 74%;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(224, 122, 46, 0.12), rgba(43, 91, 132, 0.14));
+  animation: monitorPulse 3.2s infinite alternate ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes monitorPulse {
+  0% {
+    opacity: 0.2;
+  }
+  100% {
+    opacity: 0.72;
+  }
+}
+
+.sketch-object-hitbox.phone-ringing-anim {
+  animation: sketchPhoneRingShake 0.25s infinite;
+}
+
+@keyframes sketchPhoneRingShake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg) scale(1.05);
+  }
+  25% {
+    transform: translate(-3px, -2px) rotate(-2deg) scale(1.05);
+  }
+  75% {
+    transform: translate(3px, 1px) rotate(2deg) scale(1.05);
+  }
+}
+
+.phone-ring-waves {
+  position: absolute;
+  inset: -14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sketch-object-hitbox.phone-ringing-anim .phone-ring-waves,
+.sketch-object-hitbox:hover .phone-ring-waves,
+.sketch-object-hitbox.is-hovered .phone-ring-waves {
+  opacity: 1;
+}
+
+.phone-ring-waves span {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 2px dashed var(--accent-orange);
+  animation: phoneWaveExpand 1.6s infinite ease-out;
+}
+
+.phone-ring-waves span:nth-child(2) {
+  animation-delay: 0.75s;
+}
+
+@keyframes phoneWaveExpand {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.42);
+    opacity: 0;
+  }
+}
+
+/* Layer 4: Foreground Particles */
+.plane-foreground {
+  z-index: 5;
+  pointer-events: none;
+}
+
+.sketch-particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   3. IN-SKETCH BRAND TITLE & 5 MENU LINK BUTTONS
+   -------------------------------------------------------------------------- */
+.plane-ui-links {
+  z-index: 7;
+  pointer-events: none;
+}
+
+.in-sketch-brand {
+  position: absolute;
+  left: 6.4%;
+  top: 3.4%;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.in-sketch-brand-btn {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(251, 247, 239, 0.88) 40%,
+    rgba(251, 247, 239, 0) 100%
+  );
+  border: none;
+  padding: 2px 6px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink-primary);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s ease;
+}
+
+.in-sketch-brand-btn:hover {
+  transform: scale(1.03);
+}
+
+.brand-line-1 {
+  font-family: var(--font-display);
+  font-size: clamp(0.82rem, 1.38vw, 1.32rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+  color: var(--ink-primary);
+}
+
+.brand-line-2 {
+  font-family: var(--font-display);
+  font-size: clamp(0.76rem, 1.24vw, 1.18rem);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.12;
+  color: var(--ink-primary);
+}
+
+.brand-orange-stroke {
+  display: block;
+  width: clamp(22px, 2.4vw, 36px);
+  height: 3.5px;
+  background: var(--accent-orange);
+  border-radius: 99px;
+  margin-top: 5px;
+  transform: rotate(-1.5deg);
+}
+
+.in-sketch-sound-btn {
+  width: clamp(26px, 2.2vw, 34px);
+  height: clamp(26px, 2.2vw, 34px);
+  border-radius: 50%;
+  border: 1.5px solid rgba(38, 33, 29, 0.45);
+  background: rgba(253, 251, 247, 0.82);
+  backdrop-filter: blur(4px);
+  font-size: clamp(0.72rem, 1vw, 0.92rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: transform 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.in-sketch-sound-btn:hover {
+  transform: scale(1.1);
+  background: var(--accent-orange-soft);
+  border-color: var(--accent-orange);
+}
+
+.sketch-menu-node {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sketch-callout-group {
+  position: absolute;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: radial-gradient(
+    ellipse at 48% 50%,
+    rgba(250, 245, 235, 0.94) 45%,
+    rgba(250, 245, 235, 0.72) 74%,
+    rgba(250, 245, 235, 0) 100%
+  );
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sketch-link-callout {
+  position: relative;
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink-primary);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), color 0.18s ease;
+}
+
+.node-about .sketch-link-callout {
+  position: absolute;
+  padding: 4px 8px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(251, 248, 242, 0.92) 55%,
+    rgba(251, 248, 242, 0) 100%
+  );
+}
+
+.sketch-link-title {
+  display: inline-block;
+  font-family: var(--font-hand);
+  font-size: clamp(1.05rem, 1.68vw, 1.62rem);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.02;
+  color: var(--ink-primary);
+  text-transform: uppercase;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 10px rgba(251, 247, 239, 0.95);
+  position: relative;
+}
+
+.sketch-link-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 2.5px;
+  background: var(--accent-orange);
+  border-radius: 99px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sketch-link-note,
+.sketch-link-note-inline {
+  font-family: var(--font-hand);
+  font-size: clamp(0.82rem, 1.18vw, 1.14rem);
+  font-weight: 600;
+  line-height: 1.14;
+  color: #2c2621;
+  cursor: pointer;
+  pointer-events: auto;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 8px rgba(250, 245, 235, 0.95);
+  margin-top: 3px;
+}
+
+.sketch-link-note {
+  position: absolute;
+  padding: 2px 4px;
+  font-size: clamp(0.72rem, 0.94vw, 0.96rem);
+  line-height: 1.08;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(251, 248, 242, 0.92) 55%,
+    rgba(251, 248, 242, 0) 100%
+  );
+}
+
+.node-contact .sketch-callout-group {
+  padding: 3px 6px;
+}
+
+.node-contact .sketch-link-note-inline {
+  font-size: clamp(0.74rem, 0.98vw, 1rem);
+  line-height: 1.1;
+}
+
+.sketch-arrow-svg {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgba(253, 251, 247, 0.92));
+  transition: transform 0.22s ease;
+}
+
+.sketch-orange-pin {
+  position: absolute;
+  width: clamp(30px, 2.95vw, 44px);
+  height: clamp(30px, 2.95vw, 44px);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--accent-orange);
+  color: #ffffff;
+  border: 2.5px solid #fffdf9;
+  box-shadow:
+    0 0 0 2.5px rgba(224, 122, 46, 0.45),
+    0 5px 14px rgba(30, 27, 24, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.sketch-orange-pin svg {
+  width: 54%;
+  height: 54%;
+}
+
+.sketch-orange-pin::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px dashed rgba(224, 122, 46, 0.78);
+  animation: pulseOrangePin 2.4s infinite ease-out;
+}
+
+@keyframes pulseOrangePin {
+  0% {
+    transform: scale(0.88) rotate(0deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1.42) rotate(40deg);
+    opacity: 0;
+  }
+}
+
+.sketch-menu-node.is-hovered .sketch-callout-group,
+.sketch-menu-node.is-hovered .sketch-link-callout {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.sketch-menu-node.is-hovered .sketch-link-title {
+  color: var(--accent-orange-deep);
+}
+
+.sketch-menu-node.is-hovered .sketch-link-title::after {
+  transform: scaleX(1);
+}
+
+.sketch-menu-node.is-hovered .sketch-orange-pin,
+.sketch-orange-pin:hover,
+.sketch-orange-pin:focus-visible {
+  transform: translate(-50%, -50%) scale(1.18);
+  background: var(--ink-primary);
+  box-shadow:
+    0 0 0 4px rgba(224, 122, 46, 0.65),
+    0 8px 20px rgba(30, 27, 24, 0.45);
+}
+
+.sketch-menu-node.is-hovered .sketch-arrow-svg {
+  transform: scale(1.06);
+}
+
+.mobile-stage-controls {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 25;
+  gap: 6px;
+}
+
+.sketch-mini-pill {
+  background: rgba(253, 251, 247, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line-sketch-strong);
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.portrait-sketch-cards {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   4. MINIMALIST SKETCH MODAL WINDOW & SIMPLE UNDERLINE TABS
+   -------------------------------------------------------------------------- */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(26, 22, 18, 0.42);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.26s ease, visibility 0.26s ease;
+}
+
+.overlay-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sketch-window {
+  position: relative;
+  width: 100%;
+  max-width: 1040px;
+  max-height: 86vh;
+  background: var(--bg-paper-elevated);
+  background-image:
+    radial-gradient(rgba(38, 33, 29, 0.03) 1px, transparent 0),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(244, 237, 225, 0.35) 100%);
+  background-size: 18px 18px, 100% 100%;
+  border: 1px solid rgba(38, 33, 29, 0.22);
+  box-shadow: 0 28px 70px rgba(24, 20, 16, 0.26);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(14px) scale(0.98);
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Subtle Architectural Drafting Corner Accents on Modal Sheet */
+.sketch-window::before,
+.sketch-window::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.sketch-window::before {
+  top: 10px;
+  left: 10px;
+  border-top: 2px solid var(--accent-orange);
+  border-left: 2px solid var(--accent-orange);
+}
+
+.sketch-window::after {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 2px solid var(--accent-orange);
+  border-right: 2px solid var(--accent-orange);
+}
+
+.overlay-backdrop.open .sketch-window {
+  transform: translateY(0) scale(1);
+}
+
+.window-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 30px 14px;
+  background: transparent;
+  border-bottom: 1px dashed var(--line-sketch);
+}
+
+.window-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.window-badge {
+  font-family: var(--font-hand);
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--accent-orange-deep);
+  letter-spacing: 0.03em;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.window-title {
+  font-family: var(--font-display);
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-primary);
+}
+
+.window-subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.window-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-studio-btn {
+  background: transparent;
+  border: 1px dashed var(--line-sketch-strong);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.back-studio-btn:hover {
+  color: var(--accent-orange-deep);
+  border-color: var(--accent-orange);
+  background: rgba(224, 122, 46, 0.06);
+}
+
+.window-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line-sketch);
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.window-close-btn:hover {
+  background: var(--accent-orange);
+  border-color: var(--accent-orange);
+  color: #fff;
+}
+
+/* Simple Minimalist Sketch Tabs Bar (No Heavy Boxes) */
+.window-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 30px 0;
+  background: transparent;
+  border-bottom: 1px solid rgba(38, 33, 29, 0.12);
+}
+
+.tab-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+
+.tab-pill {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 10px 2px 12px;
+  font-family: var(--font-display);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-pill::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--accent-orange);
+  border-radius: 99px;
+  transform: scaleX(0) rotate(-0.8deg);
+  transform-origin: left center;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tab-pill:hover {
+  color: var(--ink-primary);
+}
+
+.tab-pill.active {
+  color: var(--ink-primary);
+  font-weight: 700;
+}
+
+.tab-pill.active::after {
+  transform: scaleX(1) rotate(-0.8deg);
+}
+
+.tab-pill .pill-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-orange-deep);
+  background: transparent;
+  padding: 0;
+}
+
+.window-body {
+  padding: 26px 30px 32px;
+  overflow-y: auto;
+  flex: 1;
+  user-select: text;
+}
+
+.window-body::-webkit-scrollbar {
+  width: 6px;
+}
+.window-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.window-body::-webkit-scrollbar-thumb {
+  background: rgba(38, 33, 29, 0.22);
+  border-radius: 99px;
+}
+
+/* --------------------------------------------------------------------------
+   5. BORDERLESS MINIMALIST PROJECT DIVS WITH SKETCH ACCENTS
+   -------------------------------------------------------------------------- */
+.portfolio-search-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px dashed var(--line-sketch-strong);
+  border-radius: 0;
+  padding: 5px 4px;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--ink-primary);
+  min-width: 210px;
+  outline: none;
+  margin-bottom: 4px;
+  transition: border-color 0.18s ease;
+}
+
+.portfolio-search-input:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent-orange);
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px 24px;
+}
+
+/* Borderless Minimalist Project Div + Architectural Sketch Accents */
+.project-card {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 18px 0;
+  border-bottom: 1px dashed var(--line-sketch);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.22s ease;
+}
+
+.project-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 48px;
+  height: 2px;
+  background: var(--accent-orange);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.project-card:hover {
+  transform: translateY(-3px);
+}
+
+.project-card:hover::after {
+  transform: scaleX(1);
+}
+
+.project-thumb-wrap {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+  border: none;
+  border-radius: 6px;
+  background: #e7dfd0;
+  margin-bottom: 12px;
+}
+
+/* Sketch Drafting Corner Ticks on Project Image */
+.project-thumb-wrap::before,
+.project-thumb-wrap::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  z-index: 3;
+  pointer-events: none;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  opacity: 0.78;
+}
+
+.project-thumb-wrap::before {
+  top: 7px;
+  left: 7px;
+  border-top: 1.8px solid #fffdf9;
+  border-left: 1.8px solid #fffdf9;
+}
+
+.project-thumb-wrap::after {
+  bottom: 7px;
+  right: 7px;
+  border-bottom: 1.8px solid var(--accent-orange);
+  border-right: 1.8px solid var(--accent-orange);
+}
+
+.project-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: contrast(1.03) sepia(0.08);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.project-card:hover .project-thumb-wrap img {
+  transform: scale(1.045);
+}
+
+.project-card-body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.project-sketch-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.project-cat-sketch {
+  font-family: var(--font-hand);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--accent-orange-deep);
+}
+
+.project-year-sketch {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+}
+
+.project-card-title {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+  margin-bottom: 3px;
+  transition: color 0.18s ease;
+}
+
+.project-card:hover .project-card-title {
+  color: var(--accent-orange-deep);
+}
+
+.project-card-loc {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  margin-bottom: 7px;
+}
+
+.project-card-desc {
+  font-size: 0.81rem;
+  color: var(--ink-secondary);
+  line-height: 1.52;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.project-meta-row {
+  display: flex;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  margin-top: auto;
+}
+
+/* Borderless Minimalist Project Detail View */
+.project-detail-sheet {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.detail-gallery {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.detail-gallery img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border: none;
+  border-radius: 8px;
+  background: #e5dec9;
+}
+
+.detail-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px 18px;
+  margin-bottom: 22px;
+  padding: 14px 0;
+  border-top: 1px dashed var(--line-sketch);
+  border-bottom: 1px dashed var(--line-sketch);
+}
+
+.spec-box {
+  background: transparent;
+  border: none;
+  border-left: 2px solid var(--accent-orange);
+  border-radius: 0;
+  padding: 2px 0 2px 10px;
+}
+
+.spec-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+.spec-val {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   6. RESEARCH & LAB (BORDERLESS SKETCH ITEMS, ONLY "LIHAT" BUTTON, NO REPO LINKS)
+   -------------------------------------------------------------------------- */
+.lab-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 28px 24px;
+}
+
+.lab-card {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 20px 0;
+  border-bottom: 1px dashed var(--line-sketch);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.lab-card:hover {
+  transform: translateY(-2px);
+}
+
+.lab-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.lab-code-pill {
+  font-family: var(--font-hand);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--accent-orange-deep);
+  background: transparent;
+  padding: 0;
+}
+
+.lab-status-pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.lab-card-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--ink-primary);
+}
+
+.lab-ss-frame {
+  position: relative;
+  margin: 4px 0 12px;
+  border: none;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #181d22;
+  cursor: pointer;
+}
+
+/* Drafting Corner Ticks on Lab Preview */
+.lab-ss-frame::before,
+.lab-ss-frame::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.lab-ss-frame::before {
+  top: 7px;
+  left: 7px;
+  border-top: 1.8px solid rgba(255, 255, 255, 0.75);
+  border-left: 1.8px solid rgba(255, 255, 255, 0.75);
+}
+
+.lab-ss-frame::after {
+  bottom: 7px;
+  right: 7px;
+  border-bottom: 1.8px solid var(--accent-orange);
+  border-right: 1.8px solid var(--accent-orange);
+}
+
+.lab-ss-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9.5;
+  background: #0d1117;
+  overflow: hidden;
+}
+
+.lab-ss-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.38s ease;
+}
+
+.lab-ss-frame:hover .lab-ss-img-wrap img {
+  transform: scale(1.035);
+}
+
+.lab-card-desc {
+  font-size: 0.82rem;
+  color: var(--ink-secondary);
+  line-height: 1.54;
+  margin-bottom: 12px;
+}
+
+.lab-visual-preview {
+  background: transparent;
+  border: none;
+  border-top: 1px dashed rgba(38, 33, 29, 0.14);
+  padding: 10px 0 4px;
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.lab-metric-item {
+  border-left: 2px solid var(--accent-orange);
+  padding-left: 8px;
+}
+
+.lab-metric-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--ink-muted);
+}
+
+.lab-metric-val {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+
+.lab-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+
+/* Minimalist Sketch Action Buttons */
+.btn-sketch-primary {
+  background: transparent;
+  color: var(--accent-orange-deep);
+  border: 1.5px solid var(--accent-orange);
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.btn-sketch-primary:hover {
+  background: var(--accent-orange);
+  color: #ffffff;
+}
+
+.btn-sketch-secondary {
+  background: transparent;
+  color: var(--ink-secondary);
+  border: 1px dashed var(--line-sketch-strong);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.btn-sketch-secondary:hover {
+  color: var(--ink-primary);
+  border-color: var(--accent-orange);
+  background: rgba(224, 122, 46, 0.06);
+}
+
+.viewpoint-btn {
+  background: transparent;
+  border: 1px dashed var(--line-sketch-strong);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.viewpoint-btn:hover,
+.viewpoint-btn.active {
+  border-style: solid;
+  border-color: var(--accent-orange);
+  color: var(--accent-orange-deep);
+  background: rgba(224, 122, 46, 0.08);
+}
+
+.lab-ss-lightbox {
+  margin-bottom: 22px;
+  padding: 16px;
+  background: rgba(24, 29, 34, 0.96);
+  color: #f0f6fc;
+  border: none;
+  border-radius: 8px;
+}
+
+.lab-ss-lightbox-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.lab-ss-lightbox img {
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #0d1117;
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   7. BORDERLESS ABOUT STUDIO, TEAM, ARCHIVE & CONTACT SECTIONS
+   -------------------------------------------------------------------------- */
+.about-hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+
+/* Borderless Sketch Section Panel */
+.sketch-panel {
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 0 18px 0;
+  border-bottom: 1px dashed var(--line-sketch);
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 26px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed var(--line-sketch);
+}
+
+.stat-card {
+  background: transparent;
+  border: none;
+  border-left: 2px solid var(--accent-orange);
+  padding: 2px 0 2px 12px;
+  text-align: left;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--ink-primary);
+}
+
+.stat-label {
+  font-family: var(--font-hand);
+  font-size: 0.98rem;
+  color: var(--ink-secondary);
+}
+
+/* Borderless Team Cards with Sketch Accents */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 24px 20px;
+}
+
+.team-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--line-sketch);
+  display: flex;
+  flex-direction: column;
+}
+
+.team-photo-wrap {
+  position: relative;
+  height: 215px;
+  background: #e5dec9;
+  border: none;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.team-photo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  filter: contrast(1.02) sepia(0.06);
+}
+
+.team-div-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(30, 27, 24, 0.82);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.team-info {
+  padding: 0;
+}
+
+.team-name {
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.team-role {
+  font-family: var(--font-hand);
+  font-size: 0.98rem;
+  color: var(--accent-orange-deep);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.team-meta {
+  font-size: 0.74rem;
+  color: var(--ink-secondary);
+  line-height: 1.44;
+}
+
+/* Borderless Connections & Archive Timeline */
+.connections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px 20px;
+  margin-top: 12px;
+}
+
+.connection-card {
+  background: transparent;
+  border: none;
+  border-left: 2px solid var(--accent-orange);
+  padding: 2px 0 4px 12px;
+  box-shadow: none;
+}
+
+.connection-badge {
+  display: inline-block;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-orange-deep);
+  margin-bottom: 2px;
+}
+
+.connection-card h4 {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  margin-bottom: 3px;
+}
+
+.connection-card p {
+  font-size: 0.76rem;
+  color: var(--ink-secondary);
+  line-height: 1.45;
+  margin-bottom: 4px;
+}
+
+.connection-scope {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line-sketch);
+  padding: 0 0 14px 0;
+}
+
+.timeline-year {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent-orange-deep);
+}
+
+/* Minimalist Contact & Telephone Sound Visualizer */
+.phone-visualizer-bar {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line-sketch);
+  padding: 0 0 18px 0;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.phone-wave-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.phone-ring-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--accent-orange);
+  color: #fff;
+  border: 2px solid #fffdf9;
+  box-shadow: 0 4px 12px rgba(224, 122, 46, 0.35);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease;
+}
+
+.phone-ring-btn.ringing {
+  animation: shakePhone 0.35s infinite;
+}
+
+@keyframes shakePhone {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1.06);
+  }
+  25% {
+    transform: rotate(-14deg) scale(1.06);
+  }
+  75% {
+    transform: rotate(14deg) scale(1.06);
+  }
+}
+
+.waveform-bars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+}
+
+.waveform-bar {
+  width: 3px;
+  height: 8px;
+  background: var(--accent-orange);
+  border-radius: 99px;
+  transition: height 0.1s ease;
+}
+
+.waveform-bars.active .waveform-bar {
+  animation: waveBounce 0.45s infinite ease-in-out alternate;
+}
+
+.waveform-bars.active .waveform-bar:nth-child(2n) {
+  animation-delay: 0.12s;
+}
+.waveform-bars.active .waveform-bar:nth-child(3n) {
+  animation-delay: 0.24s;
+}
+
+@keyframes waveBounce {
+  from {
+    height: 6px;
+  }
+  to {
+    height: 30px;
+  }
+}
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 28px;
+}
+
+.contact-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 0 12px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line-sketch);
+}
+
+.form-field {
+  margin-bottom: 14px;
+}
+
+.form-field label {
+  display: block;
+  font-family: var(--font-hand);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  margin-bottom: 2px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 8px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px dashed var(--line-sketch-strong);
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  color: var(--ink-primary);
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  border-bottom-style: solid;
+  border-bottom-color: var(--accent-orange);
+}
+
+/* --------------------------------------------------------------------------
+   8. RESPONSIVE DESIGN FOR TABLET, MOBILE (HP) & PORTRAIT ORIENTATIONS
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px), (max-aspect-ratio: 11/10) {
+  .mobile-stage-controls {
+    display: inline-flex;
+  }
+
+  .in-sketch-sound-btn {
+    display: none;
+  }
+}
+
+@media (max-aspect-ratio: 11/10) {
+  .sketch-app-shell {
+    justify-content: space-between;
+  }
+
+  .sketch-parallax-viewport {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .sketch-parallax-viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sketch-scene-frame {
+    height: 100%;
+    width: auto;
+    aspect-ratio: 1376 / 768;
+    max-height: none;
+    flex-shrink: 0;
+  }
+
+  .sketch-parallax-viewport.fit-mode {
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  .sketch-parallax-viewport.fit-mode .sketch-scene-frame {
+    width: 100vw;
+    height: auto;
+    aspect-ratio: 1376 / 768;
+  }
+
+  .sketch-parallax-viewport.fit-mode .sketch-link-note,
+  .sketch-parallax-viewport.fit-mode .sketch-link-note-inline,
+  .sketch-parallax-viewport.fit-mode .sketch-arrow-svg {
+    display: none;
+  }
+
+  .sketch-parallax-viewport.fit-mode .sketch-link-title {
+    font-size: 0.72rem;
+    background: rgba(253, 251, 247, 0.94);
+    border: 1px solid var(--line-sketch-strong);
+    border-radius: 6px;
+    padding: 2px 6px;
+  }
+
+  /* Minimalist Borderless Portrait Sketch Link Strip below Canvas */
+  .portrait-sketch-cards {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(145px, 1fr));
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px 12px;
+    background: var(--bg-paper);
+    border-top: 1px dashed var(--line-sketch-strong);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+    z-index: 20;
+  }
+
+  .portrait-sketch-card {
+    background: rgba(253, 251, 247, 0.7);
+    border: 1px dashed var(--line-sketch-strong);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--ink-primary);
+    transition: all 0.16s ease;
+  }
+
+  .portrait-sketch-card:hover,
+  .portrait-sketch-card:active,
+  .portrait-sketch-card.active {
+    background: var(--accent-orange-soft);
+    border-style: solid;
+    border-color: var(--accent-orange);
+  }
+
+  .p-card-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent-orange);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .p-card-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .p-card-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .p-card-body strong {
+    font-family: var(--font-hand);
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink-primary);
+  }
+
+  .p-card-body small {
+    font-family: var(--font-sans);
+    font-size: 0.66rem;
+    color: var(--ink-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+}
+
+@media (max-width: 960px) {
+  .about-hero-grid,
+  .contact-layout,
+  .detail-gallery,
+  .lab-cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stats-row,
+  .detail-specs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sketch-window {
+    width: 96vw;
+    max-height: 90vh;
+    max-height: 90dvh;
+  }
+
+  .window-tabs-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-pills {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .mobile-stage-controls {
+    top: 10px;
+    right: 10px;
+  }
+
+  .sketch-mini-pill {
+    padding: 5px 10px;
+    font-size: 0.66rem;
+  }
+
+  .portrait-sketch-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px 10px 10px;
+    overflow-x: visible;
+  }
+
+  .portrait-sketch-card:last-child {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+
+  .overlay-backdrop {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .sketch-window {
+    width: 100%;
+    max-height: 91vh;
+    max-height: 91dvh;
+    border-radius: 12px;
+  }
+
+  .window-header {
+    padding: 14px 16px 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .window-title {
+    font-size: 1.04rem;
+    line-height: 1.25;
+  }
+
+  .window-subtitle {
+    display: none;
+  }
+
+  .window-header-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .window-tabs-bar {
+    padding: 2px 16px 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .tab-pills {
+    gap: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-pill {
+    padding: 8px 2px 10px;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  .portfolio-search-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .window-body {
+    padding: 16px;
+  }
+
+  .portfolio-grid,
+  .lab-cards-grid,
+  .team-grid,
+  .connections-grid,
+  .detail-specs-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .detail-gallery img {
+    height: 185px;
+  }
+
+  .waveform-bars {
+    display: none;
+  }
+
+  .timeline-item {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
